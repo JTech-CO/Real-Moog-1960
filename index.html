@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17130f">
+  <meta name="description" content="1960년대 Moog 모듈러 신디사이저의 패칭과 전압 제어를 체험하는 오프라인 웹 오디오 실험실">
+  <title>Real Moog 1960 — Voltage-Controlled Sound Laboratory</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <noscript>Real Moog 1960은 Web Audio API를 사용하므로 JavaScript가 필요합니다.</noscript>
+
+  <header class="console-bar">
+    <div class="brand-block" aria-label="Real Moog 1960">
+      <span class="brand-kicker">VOLTAGE-CONTROLLED SOUND LABORATORY</span>
+      <h1>REAL <span>MOOG</span> 1960</h1>
+      <span class="brand-sub">EDUCATIONAL WEB INSTRUMENT · REV. 1</span>
+    </div>
+
+    <div class="transport" aria-label="전원과 프리셋">
+      <button id="powerButton" class="power-switch" type="button" aria-pressed="false">
+        <span class="pilot-light" aria-hidden="true"></span>
+        <span class="power-copy"><b>POWER</b><small>오디오 시작</small></span>
+      </button>
+
+      <label class="preset-control" for="presetSelect">
+        <span>PATCH MEMORY</span>
+        <select id="presetSelect">
+          <option value="warmBass">01 · WARM BASS</option>
+          <option value="glassLead">02 · GLASS LEAD</option>
+          <option value="lunarPulse">03 · LUNAR PULSE</option>
+          <option value="selfSweep">04 · SELF SWEEP</option>
+          <option value="blank">00 · BLANK PANEL</option>
+        </select>
+      </label>
+
+      <button id="loadPresetButton" class="metal-button" type="button">LOAD</button>
+      <button id="sequenceButton" class="metal-button sequence-button" type="button" aria-pressed="false">
+        <span class="mini-light" aria-hidden="true"></span> SEQUENCER
+      </button>
+      <button id="panicButton" class="metal-button danger" type="button">PANIC</button>
+      <button id="helpButton" class="metal-button" type="button" aria-haspopup="dialog">HOW TO PATCH</button>
+    </div>
+
+    <div class="status-block" aria-live="polite">
+      <span id="statusLed" class="status-led" aria-hidden="true"></span>
+      <div><b id="statusTitle">STANDBY</b><small id="statusText">POWER를 눌러 오디오를 시작하십시오</small></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="instruction-strip" aria-label="빠른 사용법">
+      <p><b>1</b> POWER</p><i></i>
+      <p><b>2</b> 출력 잭을 입력 잭으로 드래그</p><i></i>
+      <p><b>3</b> 아래 건반 또는 A–K 키 연주</p>
+      <div class="signal-key" aria-label="잭 종류">
+        <span><i class="key-dot audio"></i>AUDIO</span>
+        <span><i class="key-dot cv"></i>CONTROL VOLTAGE</span>
+        <span><i class="key-dot gate"></i>GATE</span>
+      </div>
+    </section>
+
+    <section id="rackViewport" class="rack-viewport" aria-label="모듈러 신디사이저 랙">
+      <div id="rackShell" class="rack-shell">
+        <div class="top-rail" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+        <svg id="cableLayer" class="cable-layer" aria-hidden="true">
+          <defs>
+            <filter id="cableShadow" x="-20%" y="-20%" width="140%" height="160%">
+              <feDropShadow dx="0" dy="5" stdDeviation="3" flood-color="#000" flood-opacity=".55"/>
+            </filter>
+          </defs>
+          <g id="cableGroup"></g>
+          <path id="draftCable" class="draft-cable" d="" hidden></path>
+        </svg>
+
+        <div class="modules-grid">
+          <!-- 901-style oscillators -->
+          <article class="module vco-module span-2" data-module="vco1">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>VOLTAGE CONTROLLED</span><h2>OSCILLATOR 901-A</h2><em>OSC 1</em></header>
+            <div class="module-body">
+              <div class="control-row knobs-3">
+                <div class="control-unit"><div class="knob large" data-knob="vco1Octave" data-min="-2" data-max="2" data-step="1" data-value="-1" data-default="-1" data-format="octave" tabindex="0" role="slider" aria-label="Oscillator 1 octave"></div><label>RANGE</label><output></output></div>
+                <div class="control-unit"><div class="knob" data-knob="vco1Tune" data-min="-12" data-max="12" data-step="0.1" data-value="0" data-default="0" data-format="semitone" tabindex="0" role="slider" aria-label="Oscillator 1 tune"></div><label>FREQUENCY</label><output></output></div>
+                <div class="control-unit"><div class="knob" data-knob="vco1Mod" data-min="0" data-max="600" data-step="1" data-value="35" data-default="35" data-format="cents" tabindex="0" role="slider" aria-label="Oscillator 1 control amount"></div><label>CV AMOUNT</label><output></output></div>
+              </div>
+              <div class="jack-field input-field">
+                <span>CONTROL INPUT</span>
+                <button class="jack input cv" data-jack="vco1-pitch" data-direction="input" data-signal="cv" aria-label="Oscillator 1 pitch control input"></button>
+              </div>
+              <div class="wave-outputs">
+                <div><span class="wave sine">∿</span><button class="jack output audio" data-jack="vco1-sine" data-direction="output" data-signal="audio" aria-label="Oscillator 1 sine audio output"></button><small>SINE</small></div>
+                <div><span class="wave triangle">△</span><button class="jack output audio" data-jack="vco1-triangle" data-direction="output" data-signal="audio" aria-label="Oscillator 1 triangle audio output"></button><small>TRI</small></div>
+                <div><span class="wave saw">⌁</span><button class="jack output audio" data-jack="vco1-saw" data-direction="output" data-signal="audio" aria-label="Oscillator 1 sawtooth audio output"></button><small>SAW</small></div>
+                <div><span class="wave square">⊓</span><button class="jack output audio" data-jack="vco1-square" data-direction="output" data-signal="audio" aria-label="Oscillator 1 square audio output"></button><small>PULSE</small></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="module vco-module span-2" data-module="vco2">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>VOLTAGE CONTROLLED</span><h2>OSCILLATOR 901-B</h2><em>OSC 2</em></header>
+            <div class="module-body">
+              <div class="control-row knobs-3">
+                <div class="control-unit"><div class="knob large" data-knob="vco2Octave" data-min="-2" data-max="2" data-step="1" data-value="-1" data-default="-1" data-format="octave" tabindex="0" role="slider" aria-label="Oscillator 2 octave"></div><label>RANGE</label><output></output></div>
+                <div class="control-unit"><div class="knob" data-knob="vco2Tune" data-min="-12" data-max="12" data-step="0.1" data-value="0.08" data-default="0.08" data-format="semitone" tabindex="0" role="slider" aria-label="Oscillator 2 tune"></div><label>FREQUENCY</label><output></output></div>
+                <div class="control-unit"><div class="knob" data-knob="vco2Mod" data-min="0" data-max="600" data-step="1" data-value="28" data-default="28" data-format="cents" tabindex="0" role="slider" aria-label="Oscillator 2 control amount"></div><label>CV AMOUNT</label><output></output></div>
+              </div>
+              <div class="jack-field input-field">
+                <span>CONTROL INPUT</span>
+                <button class="jack input cv" data-jack="vco2-pitch" data-direction="input" data-signal="cv" aria-label="Oscillator 2 pitch control input"></button>
+              </div>
+              <div class="wave-outputs">
+                <div><span class="wave sine">∿</span><button class="jack output audio" data-jack="vco2-sine" data-direction="output" data-signal="audio" aria-label="Oscillator 2 sine audio output"></button><small>SINE</small></div>
+                <div><span class="wave triangle">△</span><button class="jack output audio" data-jack="vco2-triangle" data-direction="output" data-signal="audio" aria-label="Oscillator 2 triangle audio output"></button><small>TRI</small></div>
+                <div><span class="wave saw">⌁</span><button class="jack output audio" data-jack="vco2-saw" data-direction="output" data-signal="audio" aria-label="Oscillator 2 sawtooth audio output"></button><small>SAW</small></div>
+                <div><span class="wave square">⊓</span><button class="jack output audio" data-jack="vco2-square" data-direction="output" data-signal="audio" aria-label="Oscillator 2 square audio output"></button><small>PULSE</small></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="module vco-module span-2" data-module="vco3">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>VOLTAGE CONTROLLED</span><h2>OSCILLATOR 901-C</h2><em>OSC 3</em></header>
+            <div class="module-body">
+              <div class="control-row knobs-3">
+                <div class="control-unit"><div class="knob large" data-knob="vco3Octave" data-min="-2" data-max="2" data-step="1" data-value="-2" data-default="-2" data-format="octave" tabindex="0" role="slider" aria-label="Oscillator 3 octave"></div><label>RANGE</label><output></output></div>
+                <div class="control-unit"><div class="knob" data-knob="vco3Tune" data-min="-12" data-max="12" data-step="0.1" data-value="0" data-default="0" data-format="semitone" tabindex="0" role="slider" aria-label="Oscillator 3 tune"></div><label>FREQUENCY</label><output></output></div>
+                <div class="control-unit"><div class="knob" data-knob="vco3Mod" data-min="0" data-max="600" data-step="1" data-value="45" data-default="45" data-format="cents" tabindex="0" role="slider" aria-label="Oscillator 3 control amount"></div><label>CV AMOUNT</label><output></output></div>
+              </div>
+              <div class="jack-field input-field">
+                <span>CONTROL INPUT</span>
+                <button class="jack input cv" data-jack="vco3-pitch" data-direction="input" data-signal="cv" aria-label="Oscillator 3 pitch control input"></button>
+              </div>
+              <div class="wave-outputs">
+                <div><span class="wave sine">∿</span><button class="jack output audio" data-jack="vco3-sine" data-direction="output" data-signal="audio" aria-label="Oscillator 3 sine audio output"></button><small>SINE</small></div>
+                <div><span class="wave triangle">△</span><button class="jack output audio" data-jack="vco3-triangle" data-direction="output" data-signal="audio" aria-label="Oscillator 3 triangle audio output"></button><small>TRI</small></div>
+                <div><span class="wave saw">⌁</span><button class="jack output audio" data-jack="vco3-saw" data-direction="output" data-signal="audio" aria-label="Oscillator 3 sawtooth audio output"></button><small>SAW</small></div>
+                <div><span class="wave square">⊓</span><button class="jack output audio" data-jack="vco3-square" data-direction="output" data-signal="audio" aria-label="Oscillator 3 square audio output"></button><small>PULSE</small></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Noise + LFO -->
+          <article class="module utilities-module span-2" data-module="utilities">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>RANDOM SIGNALS</span><h2>NOISE · LFO 903</h2><em>MOD</em></header>
+            <div class="module-body split-body">
+              <section>
+                <h3>NOISE SOURCE</h3>
+                <div class="two-jacks">
+                  <div><button class="jack output audio" data-jack="noise-white" data-direction="output" data-signal="audio" aria-label="White noise audio output"></button><small>WHITE</small></div>
+                  <div><button class="jack output audio" data-jack="noise-pink" data-direction="output" data-signal="audio" aria-label="Pink noise audio output"></button><small>PINK</small></div>
+                </div>
+              </section>
+              <section>
+                <h3>LOW FREQ. OSC.</h3>
+                <div class="control-row knobs-2">
+                  <div class="control-unit"><div class="knob" data-knob="lfoRate" data-min="0.05" data-max="20" data-step="0.01" data-value="4.8" data-default="4.8" data-scale="log" data-format="hz" tabindex="0" role="slider" aria-label="LFO rate"></div><label>RATE</label><output></output></div>
+                  <div class="control-unit"><div class="knob" data-knob="lfoAmount" data-min="0" data-max="1" data-step="0.01" data-value="0.72" data-default="0.72" data-format="percent" tabindex="0" role="slider" aria-label="LFO amount"></div><label>LEVEL</label><output></output></div>
+                </div>
+                <div class="three-jacks compact">
+                  <div><span>∿</span><button class="jack output cv" data-jack="lfo-sine" data-direction="output" data-signal="cv" aria-label="LFO sine control output"></button></div>
+                  <div><span>△</span><button class="jack output cv" data-jack="lfo-triangle" data-direction="output" data-signal="cv" aria-label="LFO triangle control output"></button></div>
+                  <div><span>⊓</span><button class="jack output cv" data-jack="lfo-square" data-direction="output" data-signal="cv" aria-label="LFO square control output"></button></div>
+                </div>
+              </section>
+            </div>
+          </article>
+
+          <!-- Mixer -->
+          <article class="module mixer-module span-2" data-module="mixer">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>TRANSISTOR MIXER</span><h2>CP3 FOUR CHANNEL</h2><em>MIX</em></header>
+            <div class="module-body">
+              <div class="mixer-channels">
+                <div class="mixer-channel"><span>1</span><div class="knob small" data-knob="mix1" data-min="0" data-max="1.25" data-step="0.01" data-value="0.68" data-default="0.68" data-format="gain" tabindex="0" role="slider" aria-label="Mixer channel 1 level"></div><button class="jack input audio" data-jack="mixer-in1" data-direction="input" data-signal="audio" aria-label="Mixer channel 1 audio input"></button></div>
+                <div class="mixer-channel"><span>2</span><div class="knob small" data-knob="mix2" data-min="0" data-max="1.25" data-step="0.01" data-value="0.58" data-default="0.58" data-format="gain" tabindex="0" role="slider" aria-label="Mixer channel 2 level"></div><button class="jack input audio" data-jack="mixer-in2" data-direction="input" data-signal="audio" aria-label="Mixer channel 2 audio input"></button></div>
+                <div class="mixer-channel"><span>3</span><div class="knob small" data-knob="mix3" data-min="0" data-max="1.25" data-step="0.01" data-value="0.38" data-default="0.38" data-format="gain" tabindex="0" role="slider" aria-label="Mixer channel 3 level"></div><button class="jack input audio" data-jack="mixer-in3" data-direction="input" data-signal="audio" aria-label="Mixer channel 3 audio input"></button></div>
+                <div class="mixer-channel"><span>4</span><div class="knob small" data-knob="mix4" data-min="0" data-max="1.25" data-step="0.01" data-value="0.2" data-default="0.2" data-format="gain" tabindex="0" role="slider" aria-label="Mixer channel 4 level"></div><button class="jack input audio" data-jack="mixer-in4" data-direction="input" data-signal="audio" aria-label="Mixer channel 4 audio input"></button></div>
+              </div>
+              <div class="jack-field output-field"><span>MIXED OUTPUT</span><button class="jack output audio" data-jack="mixer-out" data-direction="output" data-signal="audio" aria-label="Mixer audio output"></button></div>
+              <p class="engraved-note">LEVELS ABOVE 8 ADD CP3 SATURATION</p>
+            </div>
+          </article>
+
+          <!-- Monitor output -->
+          <article class="module monitor-module span-2" data-module="output">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>OUTPUT & MONITOR</span><h2>CONSOLE 984</h2><em>OUT</em></header>
+            <div class="module-body">
+              <canvas id="scopeCanvas" width="320" height="112" aria-label="오실로스코프"></canvas>
+              <div class="monitor-lower">
+                <div class="jack-field"><span>SIGNAL IN</span><button class="jack input audio" data-jack="output-in" data-direction="input" data-signal="audio" aria-label="Main output audio input"></button></div>
+                <div class="control-unit"><div class="knob" data-knob="masterVolume" data-min="0" data-max="0.8" data-step="0.01" data-value="0.42" data-default="0.42" data-format="percent" tabindex="0" role="slider" aria-label="Master output volume"></div><label>VOLUME</label><output></output></div>
+                <div class="vu-meter" aria-hidden="true"><span id="vuBar"></span><i>-20</i><i>-6</i><i>0</i></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Filter -->
+          <article class="module filter-module span-2" data-module="filter">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>VOLTAGE CONTROLLED</span><h2>LOW-PASS FILTER 904-A</h2><em>VCF</em></header>
+            <div class="module-body">
+              <div class="control-row knobs-2 featured-controls">
+                <div class="control-unit"><div class="knob xl" data-knob="filterCutoff" data-min="55" data-max="18000" data-step="1" data-value="1250" data-default="1250" data-scale="log" data-format="hz" tabindex="0" role="slider" aria-label="Filter cutoff frequency"></div><label>CUTOFF FREQ.</label><output></output></div>
+                <div class="control-unit"><div class="knob large" data-knob="filterResonance" data-min="0.1" data-max="18" data-step="0.1" data-value="6.5" data-default="6.5" data-format="q" tabindex="0" role="slider" aria-label="Filter resonance"></div><label>REGENERATION</label><output></output></div>
+              </div>
+              <div class="control-row knobs-2 lower-controls">
+                <div class="control-unit"><div class="knob small" data-knob="filterMod" data-min="0" data-max="6000" data-step="10" data-value="2600" data-default="2600" data-format="hz" tabindex="0" role="slider" aria-label="Filter control voltage amount"></div><label>CV AMOUNT</label><output></output></div>
+                <div class="control-unit"><div class="knob small" data-knob="filterDrive" data-min="0.5" data-max="4" data-step="0.01" data-value="1.65" data-default="1.65" data-format="gain" tabindex="0" role="slider" aria-label="Filter input drive"></div><label>DRIVE</label><output></output></div>
+              </div>
+              <div class="filter-jacks">
+                <div><span>AUDIO IN</span><button class="jack input audio" data-jack="filter-in" data-direction="input" data-signal="audio" aria-label="Filter audio input"></button></div>
+                <div><span>CONTROL IN</span><button class="jack input cv" data-jack="filter-cutoff" data-direction="input" data-signal="cv" aria-label="Filter cutoff control input"></button></div>
+                <div><span>AUDIO OUT</span><button class="jack output audio" data-jack="filter-out" data-direction="output" data-signal="audio" aria-label="Filter audio output"></button></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Envelopes -->
+          <article class="module envelope-module span-4" data-module="envelopes">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>ENVELOPE GENERATORS</span><h2>DUAL 911 CONTOUR</h2><em>ADSR</em></header>
+            <div class="module-body dual-envelope">
+              <section data-envelope="env1">
+                <h3>CONTOUR No. 1 <small>AMPLITUDE</small></h3>
+                <div class="adsr-controls">
+                  <div class="control-unit"><div class="knob small" data-knob="env1Attack" data-min="0.005" data-max="4" data-step="0.005" data-value="0.025" data-default="0.025" data-scale="log" data-format="seconds" tabindex="0" role="slider" aria-label="Envelope 1 attack"></div><label>ATTACK</label><output></output></div>
+                  <div class="control-unit"><div class="knob small" data-knob="env1Decay" data-min="0.01" data-max="4" data-step="0.01" data-value="0.24" data-default="0.24" data-scale="log" data-format="seconds" tabindex="0" role="slider" aria-label="Envelope 1 decay"></div><label>DECAY</label><output></output></div>
+                  <div class="control-unit"><div class="knob small" data-knob="env1Sustain" data-min="0" data-max="1" data-step="0.01" data-value="0.72" data-default="0.72" data-format="percent" tabindex="0" role="slider" aria-label="Envelope 1 sustain"></div><label>SUSTAIN</label><output></output></div>
+                  <div class="control-unit"><div class="knob small" data-knob="env1Release" data-min="0.01" data-max="6" data-step="0.01" data-value="0.34" data-default="0.34" data-scale="log" data-format="seconds" tabindex="0" role="slider" aria-label="Envelope 1 release"></div><label>RELEASE</label><output></output></div>
+                </div>
+                <div class="envelope-jacks">
+                  <div><span>TRIGGER</span><button class="jack input gate" data-jack="env1-gate" data-direction="input" data-signal="gate" aria-label="Envelope 1 gate input"></button></div>
+                  <div><span>CONTROL OUT</span><button class="jack output cv" data-jack="env1-out" data-direction="output" data-signal="cv" aria-label="Envelope 1 control output"></button></div>
+                </div>
+              </section>
+              <section data-envelope="env2">
+                <h3>CONTOUR No. 2 <small>FILTER</small></h3>
+                <div class="adsr-controls">
+                  <div class="control-unit"><div class="knob small" data-knob="env2Attack" data-min="0.005" data-max="4" data-step="0.005" data-value="0.015" data-default="0.015" data-scale="log" data-format="seconds" tabindex="0" role="slider" aria-label="Envelope 2 attack"></div><label>ATTACK</label><output></output></div>
+                  <div class="control-unit"><div class="knob small" data-knob="env2Decay" data-min="0.01" data-max="4" data-step="0.01" data-value="0.42" data-default="0.42" data-scale="log" data-format="seconds" tabindex="0" role="slider" aria-label="Envelope 2 decay"></div><label>DECAY</label><output></output></div>
+                  <div class="control-unit"><div class="knob small" data-knob="env2Sustain" data-min="0" data-max="1" data-step="0.01" data-value="0.26" data-default="0.26" data-format="percent" tabindex="0" role="slider" aria-label="Envelope 2 sustain"></div><label>SUSTAIN</label><output></output></div>
+                  <div class="control-unit"><div class="knob small" data-knob="env2Release" data-min="0.01" data-max="6" data-step="0.01" data-value="0.28" data-default="0.28" data-scale="log" data-format="seconds" tabindex="0" role="slider" aria-label="Envelope 2 release"></div><label>RELEASE</label><output></output></div>
+                </div>
+                <div class="envelope-jacks">
+                  <div><span>TRIGGER</span><button class="jack input gate" data-jack="env2-gate" data-direction="input" data-signal="gate" aria-label="Envelope 2 gate input"></button></div>
+                  <div><span>CONTROL OUT</span><button class="jack output cv" data-jack="env2-out" data-direction="output" data-signal="cv" aria-label="Envelope 2 control output"></button></div>
+                </div>
+              </section>
+            </div>
+          </article>
+
+          <!-- VCA -->
+          <article class="module vca-module span-2" data-module="vca">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>VOLTAGE CONTROLLED</span><h2>AMPLIFIER 902</h2><em>VCA</em></header>
+            <div class="module-body">
+              <div class="control-row knobs-2 featured-controls">
+                <div class="control-unit"><div class="knob large" data-knob="vcaInitial" data-min="0" data-max="1" data-step="0.01" data-value="0" data-default="0" data-format="percent" tabindex="0" role="slider" aria-label="VCA initial gain"></div><label>INITIAL GAIN</label><output></output></div>
+                <div class="control-unit"><div class="knob large" data-knob="vcaCvAmount" data-min="0" data-max="1" data-step="0.01" data-value="0.9" data-default="0.9" data-format="percent" tabindex="0" role="slider" aria-label="VCA control voltage amount"></div><label>CV AMOUNT</label><output></output></div>
+              </div>
+              <div class="vca-jacks">
+                <div><span>AUDIO IN</span><button class="jack input audio" data-jack="vca-in" data-direction="input" data-signal="audio" aria-label="VCA audio input"></button></div>
+                <div><span>CONTROL IN</span><button class="jack input cv" data-jack="vca-cv" data-direction="input" data-signal="cv" aria-label="VCA gain control input"></button></div>
+                <div><span>AUDIO OUT</span><button class="jack output audio" data-jack="vca-out" data-direction="output" data-signal="audio" aria-label="VCA audio output"></button></div>
+              </div>
+              <p class="engraved-note">OUTPUT = SIGNAL × CONTROL VOLTAGE</p>
+            </div>
+          </article>
+
+          <!-- Sequencer -->
+          <article class="module sequencer-module span-4" data-module="sequencer">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>SEQUENTIAL CONTROLLER</span><h2>EIGHT STEP 960</h2><em>SEQ</em></header>
+            <div class="module-body">
+              <div class="sequencer-meta">
+                <div class="control-unit"><div class="knob small" data-knob="tempo" data-min="40" data-max="220" data-step="1" data-value="112" data-default="112" data-format="bpm" tabindex="0" role="slider" aria-label="Sequencer tempo"></div><label>TEMPO</label><output></output></div>
+                <div class="seq-jacks"><div><span>CV OUT</span><button class="jack output cv" data-jack="sequencer-cv" data-direction="output" data-signal="cv" aria-label="Sequencer pitch control output"></button></div><div><span>GATE OUT</span><button class="jack output gate" data-jack="sequencer-gate" data-direction="output" data-signal="gate" aria-label="Sequencer gate output"></button></div></div>
+              </div>
+              <div id="stepControls" class="step-controls">
+                <div class="step active" data-step="0"><i></i><span>1</span><div class="knob tiny" data-knob="step1" data-min="-12" data-max="12" data-step="1" data-value="0" data-default="0" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 1 pitch"></div></div>
+                <div class="step" data-step="1"><i></i><span>2</span><div class="knob tiny" data-knob="step2" data-min="-12" data-max="12" data-step="1" data-value="3" data-default="3" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 2 pitch"></div></div>
+                <div class="step" data-step="2"><i></i><span>3</span><div class="knob tiny" data-knob="step3" data-min="-12" data-max="12" data-step="1" data-value="7" data-default="7" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 3 pitch"></div></div>
+                <div class="step" data-step="3"><i></i><span>4</span><div class="knob tiny" data-knob="step4" data-min="-12" data-max="12" data-step="1" data-value="10" data-default="10" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 4 pitch"></div></div>
+                <div class="step" data-step="4"><i></i><span>5</span><div class="knob tiny" data-knob="step5" data-min="-12" data-max="12" data-step="1" data-value="7" data-default="7" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 5 pitch"></div></div>
+                <div class="step" data-step="5"><i></i><span>6</span><div class="knob tiny" data-knob="step6" data-min="-12" data-max="12" data-step="1" data-value="3" data-default="3" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 6 pitch"></div></div>
+                <div class="step" data-step="6"><i></i><span>7</span><div class="knob tiny" data-knob="step7" data-min="-12" data-max="12" data-step="1" data-value="-2" data-default="-2" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 7 pitch"></div></div>
+                <div class="step" data-step="7"><i></i><span>8</span><div class="knob tiny" data-knob="step8" data-min="-12" data-max="12" data-step="1" data-value="-5" data-default="-5" data-format="noteOffset" tabindex="0" role="slider" aria-label="Sequencer step 8 pitch"></div></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Keyboard controller -->
+          <article class="module keyboard-module span-12" data-module="keyboard">
+            <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+            <header><span>DUOPHONIC KEYBOARD CONTROLLER</span><h2>MODEL 950 PERFORMANCE PANEL</h2><em>KBD</em></header>
+            <div class="module-body keyboard-body">
+              <div class="keyboard-controls">
+                <div class="control-unit"><div class="knob small" data-knob="glide" data-min="0" data-max="1.5" data-step="0.01" data-value="0.03" data-default="0.03" data-format="seconds" tabindex="0" role="slider" aria-label="Keyboard glide time"></div><label>GLIDE</label><output></output></div>
+                <div class="octave-buttons" role="group" aria-label="Keyboard octave"><button type="button" data-octave-shift="-1">− OCT</button><strong id="octaveReadout">C3–C5</strong><button type="button" data-octave-shift="1">+ OCT</button></div>
+                <div class="keyboard-jacks"><div><span>PITCH CV</span><button class="jack output cv" data-jack="keyboard-cv" data-direction="output" data-signal="cv" aria-label="Keyboard pitch control output"></button></div><div><span>GATE</span><button class="jack output gate" data-jack="keyboard-gate" data-direction="output" data-signal="gate" aria-label="Keyboard gate output"></button></div></div>
+              </div>
+              <div id="keyboard" class="keyboard" role="application" aria-label="두 옥타브 피아노 건반"></div>
+              <p class="keyboard-hint">COMPUTER KEYS: A W S E D F T G Y H U J K · Z/X OCTAVE · SPACE HOLDS C</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="bottom-rail" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </section>
+
+    <section class="patch-console" aria-label="패치 현황">
+      <div>
+        <span class="section-kicker">LIVE ROUTING</span>
+        <h2>PATCH CORDS <b id="patchCount">0</b></h2>
+      </div>
+      <div id="patchList" class="patch-list" aria-live="polite"></div>
+      <button id="clearPatchButton" class="text-button" type="button">모든 케이블 제거</button>
+    </section>
+
+    <section class="field-notes">
+      <div><span>01</span><h2>소리와 제어 전압은 다릅니다</h2><p>검은 AUDIO 잭은 실제 파형을, 황색 CV 잭은 노브를 자동으로 움직이는 값을, 적색 GATE 잭은 음의 시작과 끝을 전달합니다.</p></div>
+      <div><span>02</span><h2>패치가 곧 프로그램입니다</h2><p>VCO → Mixer → Filter → VCA → Output이 기본 흐름입니다. Keyboard CV를 VCO에, Gate를 Envelope에 연결해야 건반이 음높이와 음량을 제어합니다.</p></div>
+      <div><span>03</span><h2>한 선만 바꿔도 결과가 달라집니다</h2><p>LFO를 OSC에 연결하면 비브라토, Filter에 연결하면 자동 스윕이 됩니다. Envelope를 VCA에 연결하면 눌렀다 떼는 음표가 생깁니다.</p></div>
+    </section>
+  </main>
+
+  <footer>
+    <p><b>REAL MOOG 1960</b> · Independent educational interpretation. Not affiliated with or endorsed by Moog Music.</p>
+    <p>Native Web Audio · No samples · No tracking · Works offline</p>
+  </footer>
+
+  <dialog id="helpDialog" class="help-dialog">
+    <form method="dialog"><button class="dialog-close" aria-label="도움말 닫기">×</button></form>
+    <span class="section-kicker">PATCH SCHOOL · LESSON 01</span>
+    <h2>첫 소리를 만드는 7개의 케이블</h2>
+    <ol>
+      <li><b>OSC 1 SAW</b> → <b>MIXER INPUT 1</b></li>
+      <li><b>MIXER OUT</b> → <b>FILTER AUDIO IN</b></li>
+      <li><b>FILTER OUT</b> → <b>VCA AUDIO IN</b></li>
+      <li><b>VCA OUT</b> → <b>OUTPUT SIGNAL IN</b></li>
+      <li><b>KEYBOARD PITCH CV</b> → <b>OSC 1 CONTROL INPUT</b></li>
+      <li><b>KEYBOARD GATE</b> → <b>ENVELOPE 1 TRIGGER</b></li>
+      <li><b>ENVELOPE 1 OUT</b> → <b>VCA CONTROL IN</b></li>
+    </ol>
+    <p>출력 잭에서 입력 잭까지 드래그하거나 두 잭을 차례로 클릭합니다. 케이블을 더블클릭하거나 아래 PATCH CORDS 목록의 ×를 누르면 제거됩니다.</p>
+    <div class="dialog-actions"><button id="loadTutorialButton" class="metal-button" type="button">WARM BASS 패치 불러오기</button><form method="dialog"><button class="metal-button" type="submit">닫고 직접 해보기</button></form></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/knob.js"></script>
+  <script src="js/audio-engine.js"></script>
+  <script src="js/patch-bay.js"></script>
+  <script src="js/sequencer.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

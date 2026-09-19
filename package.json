@@ -1,0 +1,13 @@
+{
+  "name": "real-moog-1960",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline educational 1960s modular synthesizer built with native Web Audio",
+  "scripts": {
+    "test": "node tests/smoke.mjs"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.12"
+  },
+  "license": "MIT"
+}
