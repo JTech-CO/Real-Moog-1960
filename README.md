@@ -46,7 +46,7 @@ See [README-KR.md](README-KR.md) for detailed Korean documentation and [QA-KR.md
 
 ## References
 
-- [1967 R.A. Moog Catalog](https://moogfoundation.org/wp-content/uploads/1967-R.A.-Moog-Catalog.pdf)
+- [1967 R.A. Moog Catalog](assets/1967-R.A.-Moog-Catalog.pdf)
 - [Smithsonian Moog 901 VCO](https://americanhistory.si.edu/collections/object/nmah_609212)
 - [Tone.js Envelope reference](https://tonejs.github.io/docs/15.1.22/classes/Envelope.html)
 - [Web Audio API specification](https://webaudio.github.io/web-audio-api/)
